@@ -21,38 +21,44 @@ When a PDM object is deleted, the library may try to switch off the laser source
 
 ### Basic laser activation in continuous mode
 
-    import pypdm
+```python
+import pypdm
 
-    pdm = pypdm.PDM(1, 'COM0')
-    # Set offset current in mA.
-    pdm.offset_current = 30
-    pdm.activation = True
-    # Apply new settings to the device.
-    pdm.apply()
+pdm = pypdm.PDM(1, 'COM0')
+# Set offset current in mA.
+pdm.offset_current = 30
+pdm.activation = True
+# Apply new settings to the device.
+pdm.apply()
+```
 
 ### List of available properties
 
-    import pypdm
+```python
+import pypdm
 
-    pdm = pypdm.PDM(1, 'COM0')
-    print('Mode:', pdm.mode)
-    print('Synchronization source:', pdm.sync_source)
-    print('Delay line type:', pdm.delay_line_type)
-    print('Frequency (Hz):', pdm.frequency)
-    print('Pulse width (ps):', pdm.pulse_width)
-    print('Delay (ps):', pdm.delay)
-    print('Offset current (mA):', pdm.offset_current)
-    print('Current (%):', pdm.current_percentage)
-    print('Current (mA):', pdm.current)
-    print('Temperature (C°):', pdm.temperature)
-    print('Maximum current (mA):', pdm.maximum_current)
-    print('Interlock status:', pdm.interlock_status)
-    print('Laser activation:', pdm.laser_activation)
+pdm = pypdm.PDM(1, 'COM0')
+print('Mode:', pdm.mode)
+print('Synchronization source:', pdm.sync_source)
+print('Delay line type:', pdm.delay_line_type)
+print('Frequency (Hz):', pdm.frequency)
+print('Pulse width (ps):', pdm.pulse_width)
+print('Delay (ps):', pdm.delay)
+print('Offset current (mA):', pdm.offset_current)
+print('Current (%):', pdm.current_percentage)
+print('Current (mA):', pdm.current)
+print('Temperature (C°):', pdm.temperature)
+print('Maximum current (mA):', pdm.maximum_current)
+print('Interlock status:', pdm.interlock_status)
+print('Laser activation:', pdm.laser_activation)
+```
 
 ### Use of two sources in daisy-chain configuration
 
-    import pypdm
+```python
+import pypdm
 
-    pdm1 = pypdm.PDM(1, 'COM0')
-    pdm2 = pypdm.PDM(2, pdm1)
+pdm1 = pypdm.PDM(1, 'COM0')
+pdm2 = pypdm.PDM(2, pdm1)
+```
 
