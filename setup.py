@@ -24,4 +24,5 @@ from setuptools import setup, find_packages
 setup(
     name='pypdm',
     version='1.0',
+    install_requires=['pyserial'],
     packages=find_packages())
