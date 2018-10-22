@@ -8,6 +8,10 @@ Clone the repository then use pip3 to install the package.
 
     pip3 install pypdm
 
+## Documentation
+
+A quick documentation is available on [Read the Docs](https://pypdm.readthedocs.io). A simple usage example is also provided below.
+
 ## Requirements
 
 This library requires the following packages:
