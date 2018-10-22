@@ -12,6 +12,7 @@ Welcome to pypdm's documentation!
 
    Getting started! <getting_started.rst>
    Reference API <api.rst>
+   License (LGPL v3) <license.rst>
 
 
 Indices and tables

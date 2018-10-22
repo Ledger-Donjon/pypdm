@@ -135,13 +135,14 @@ class Mode(Enum):
 
 class Link:
     """
-    Base PDM communication implementation. An instance of Link use a serial
-    port and can be shared by multiple PDM instances if the devices are
-    daisy-chained.
+    Base PDM communication implementation. An instance of :class:`Link` uses a
+    serial port and can be shared by multiple :class:`PDM` instances if the
+    devices are daisy-chained.
     """
     def __init__(self, dev):
         """
         Open serial device.
+
         :param dev: Serial device path. For instance '/dev/ttyUSB0' on linux,
             'COM0' on Windows.
         """
@@ -200,9 +201,9 @@ class Link:
 
     def command(self, address, command, data=bytes()):
         """
-        Transmit a command to the laser source, and retrieve the response to
-        that command. This method is equivalent of calling __send and then
-        __receive.
+        Transmit a command to a laser source, and retrieve the response to
+        that command.
+
         :param address: Device address.
         :param command: An instance of Command enumeration.
         :param data: Data bytes.
@@ -220,10 +221,9 @@ class PDM:
     def __init__(self, address, link):
         """
         :param address: PDM device address.
-        :param dev: If specified, use the given serial port.
         :param link: Specify a string for the serial to be used
-            ('/dev/ttyUSBx' or 'COMx'), a Link or PDM instance for
-            daisy-chained configurations.
+            ('/dev/ttyUSBx' or 'COMx'), a :class:`Link` or :class:`PDM` instance
+            for daisy-chained configurations.
         """
         self.address = address
         if type(link) is str:
@@ -262,7 +262,7 @@ class PDM:
 
     def read_protocol_version(self):
         """
-        :return: Protocol version string.
+        :return: Protocol version string, for instance '3.4'.
         """
         res = self.__command(Command.READ_PROTOCOL_VERSION)
         major = res[1]
@@ -302,31 +302,31 @@ class PDM:
 
     @property
     def sync_source(self):
-        """ Synchronization source (:class:`SyncSource` instance). """
+        """ Synchronization source, :class:`SyncSource` instance. """
         val = self.__read_instruction(Instruction.SYNC_SOURCE, 1)[0]
         return SyncSource(val)
 
     @property
     def delay_line_type(self):
-        """ Delay line type (DelayLineType instance). """
+        """ Delay line type, :class:`DelayLineType` instance. Read-only. """
         val = self.__read_instruction(Instruction.DELAY_LINE_TYPE, 1)[0]
         return DelayLineType(val)
 
     @property
     def frequency(self):
-        """ Frequency, in Hz. int. """
+        """ Frequency, in Hz. int. Read-only. """
         val = self.__read_instruction(Instruction.FREQUENCY, 4)
         return int.from_bytes(val, 'big', signed=False)
 
     @property
     def pulse_width(self):
-        """ Pulse width, in ps. int. """
+        """ Pulse width, in ps. int. Read-only. """
         val = self.__read_instruction(Instruction.PULSE_WIDTH, 4)
         return int.from_bytes(val, 'big', signed=False)
 
     @property
     def delay(self):
-        """ Delay, in ps. int. """
+        """ Delay, in ps. int. Read-only. """
         val = self.__read_instruction(Instruction.DELAY, 4)
         return int.from_bytes(val, 'big', signed=False)
 
@@ -348,7 +348,11 @@ class PDM:
 
     @property
     def current_percentage(self):
-        """ Current, in percentage of maximum. """
+        """
+        Current, in percentage of maximum. This is an alternative way of
+        changing the :attr:`current` property. Call :meth:`apply` to make any
+        change effective.
+        """
         val = self.__read_instruction(Instruction.CURRENT, 4)
         current = struct.unpack('>f', val)[0]
         if (current < 0) or (current > 100):
@@ -368,7 +372,8 @@ class PDM:
         Current, in mA.
         Please note this property is in milli-amperes and is not a percentage
         of the maximum current, as the official PDM documentation may state.
-        For the percentage, see current_percentage property.
+        For the percentage, see current_percentage property. Call :meth:`apply`
+        to make any change effective.
 
         :getter: Return diode current configuration.
         :setter: Set the new current. Raise a ValueError if current is out of
@@ -408,7 +413,10 @@ class PDM:
 
     @property
     def current_source(self):
-        """ Current source (CurrentSource enumeration instance). """
+        """
+        Current source, :class:`CurrentSource` instance.
+        Read-only.
+        """
         val = self.__read_instruction(Instruction.CURRENT_SOURCE, 1)[0]
         return CurrentSource(val)
 
@@ -424,7 +432,7 @@ class PDM:
     def activation(self):
         """
         True when laser is enabled, False when laser is off. Call :meth:`apply`
-        to make change effective.
+        to make any change effective.
         """
         val = self.__read_instruction(Instruction.LASER_ACTIVATION, 1)[0]
         if val not in range(2):
@@ -438,7 +446,7 @@ class PDM:
 
     @property
     def mode(self):
-        """ PDM mode (Mode enumeration instance). """
+        """ PDM mode, :class:`Mode` instance. """
         res = self.__command(Command.READ_CW_PULSE)
         if len(res) != 2:
             raise ProtocolError()
