@@ -25,10 +25,12 @@ import serial
 
 
 class ChecksumError(Exception):
+    """ Thrown if a communication checksum error is detected. """
     pass
 
 
 class ProtocolError(Exception):
+    """ Thrown if an unexpected response from the device is received. """
     pass
 
 
@@ -37,6 +39,9 @@ class ConnectionFailure(Exception):
 
 
 class ProtocolVersionNotSupported(Exception):
+    """
+    Thrown when a PDM protocol version is not (yet) supported by the library.
+    """
     def __init__(self, version):
         """
         :param version: Version string.
@@ -49,6 +54,10 @@ class ProtocolVersionNotSupported(Exception):
 
 
 class StatusError(Exception):
+    """
+    Thrown when a PDM device did not respond with 'OK' status to the last
+    command.
+    """
     def __init__(self, status):
         """
         :param status: Status code. int.
@@ -253,7 +262,6 @@ class PDM:
 
     def read_protocol_version(self):
         """
-        Query protocol version.
         :return: Protocol version string.
         """
         res = self.__command(Command.READ_PROTOCOL_VERSION)
@@ -294,7 +302,7 @@ class PDM:
 
     @property
     def sync_source(self):
-        """ Synchronization source (SyncSource instance). """
+        """ Synchronization source (:class:`SyncSource` instance). """
         val = self.__read_instruction(Instruction.SYNC_SOURCE, 1)[0]
         return SyncSource(val)
 
@@ -361,6 +369,7 @@ class PDM:
         Please note this property is in milli-amperes and is not a percentage
         of the maximum current, as the official PDM documentation may state.
         For the percentage, see current_percentage property.
+
         :getter: Return diode current configuration.
         :setter: Set the new current. Raise a ValueError if current is out of
             bounds.
@@ -413,7 +422,10 @@ class PDM:
 
     @property
     def activation(self):
-        """ True when laser is enabled, False when laser is off. """
+        """
+        True when laser is enabled, False when laser is off. Call :meth:`apply`
+        to make change effective.
+        """
         val = self.__read_instruction(Instruction.LASER_ACTIVATION, 1)[0]
         if val not in range(2):
             raise ProtocolError()

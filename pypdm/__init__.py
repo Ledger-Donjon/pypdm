@@ -17,4 +17,6 @@
 # Copyright 2018 Olivier Hériveaux, Ledger SAS
 
 
-from .pdm import PDM, Link, ConnectionFailure
+from .pdm import PDM, Link, ConnectionFailure, SyncSource, DelayLineType, \
+    CurrentSource, Mode, ChecksumError, ProtocolError, \
+    ProtocolVersionNotSupported, ConnectionFailure, StatusError
