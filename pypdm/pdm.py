@@ -218,6 +218,8 @@ class PDM:
     """
     Class to command one Alphanov's PDM laser sources.
     """
+    # Maximum delay in ps, according to documentation.
+    MAX_DELAY = 15000
     # Maximum pulse width, in ps, according to documentation.
     MAX_PULSE_WIDTH = 1275000
 
@@ -343,7 +345,8 @@ class PDM:
         val = self.__read_instruction(Instruction.PULSE_WIDTH, 4)
         return int.from_bytes(val, 'big', signed=False)
 
-    @pulse_width.setter(self, value):
+    @pulse_width.setter
+    def pulse_width(self, value):
         if value not in range(self.MAX_PULSE_WIDTH+1):
             raise ValueError('Pulse width out of bounds')
         self.__write_instruction(Instruction.PULSE_WIDTH,
@@ -351,9 +354,16 @@ class PDM:
 
     @property
     def delay(self):
-        """ Delay, in ps. int. Read-only. """
+        """ Delay, in ps. int. Maximum value is defined in MAX_DELAY. """
         val = self.__read_instruction(Instruction.DELAY, 4)
         return int.from_bytes(val, 'big', signed=False)
+
+    @delay.setter
+    def delay(self, value):
+        if value not in range(self.MAX_DELAY+1):
+            raise ValueError('Delay out of bounds')
+        self.__write_instruction(Instruction.DELAY,
+            value.to_bytes(4, 'big', signed=False))
 
     @property
     def offset_current(self):
