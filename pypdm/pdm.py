@@ -218,6 +218,9 @@ class PDM:
     """
     Class to command one Alphanov's PDM laser sources.
     """
+    # Maximum pulse width, in ps, according to documentation.
+    MAX_PULSE_WIDTH = 1275000
+
     def __init__(self, address, link):
         """
         :param address: PDM device address.
@@ -315,7 +318,7 @@ class PDM:
 
     @property
     def delay_line_type(self):
-        """ Delay line type, :class:`DelayLineType` instance. Read-only. """
+        """ Delay line type, :class:`DelayLineType` instance. """
         val = self.__read_instruction(Instruction.DELAY_LINE_TYPE, 1)[0]
         return DelayLineType(val)
 
@@ -334,9 +337,17 @@ class PDM:
 
     @property
     def pulse_width(self):
-        """ Pulse width, in ps. int. Read-only. """
+        """
+        Pulse width, in ps. int. Maximum value is defined in MAX_PULSE_WIDTH.
+        """
         val = self.__read_instruction(Instruction.PULSE_WIDTH, 4)
         return int.from_bytes(val, 'big', signed=False)
+
+    @pulse_width.setter(self, value):
+        if value not in range(self.MAX_PULSE_WIDTH+1):
+            raise ValueError('Pulse width out of bounds')
+        self.__write_instruction(Instruction.PULSE_WIDTH,
+            value.to_bytes(4, 'big', signed=False))
 
     @property
     def delay(self):
