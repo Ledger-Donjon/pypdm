@@ -306,11 +306,25 @@ class PDM:
         val = self.__read_instruction(Instruction.SYNC_SOURCE, 1)[0]
         return SyncSource(val)
 
+    @sync_source.setter
+    def sync_source(self, value):
+        if not isinstance(value, SyncSource):
+            raise ValueError('Param is not a SyncSource')
+        self.__write_instruction(Instruction.SYNC_SOURCE,
+            value.value.to_bytes(1, 'big', signed=False))
+
     @property
     def delay_line_type(self):
         """ Delay line type, :class:`DelayLineType` instance. Read-only. """
         val = self.__read_instruction(Instruction.DELAY_LINE_TYPE, 1)[0]
         return DelayLineType(val)
+
+    @delay_line_type.setter
+    def delay_line_type(self, value):
+        if not isinstance(value, DelayLineType):
+            raise ValueError('Param is not a DelayLineType')
+        self.__write_instruction(Instruction.DELAY_LINE_TYPE,
+            value.value.to_bytes(1, 'big', signed=False))
 
     @property
     def frequency(self):
