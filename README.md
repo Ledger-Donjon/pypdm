@@ -19,7 +19,7 @@ This library requires the following packages:
 
 ## Safety
 
-When a PDM object is deleted, the library may try to switch off the laser source for safety. However, you shall not rely on this behavior and always beware of dangers when using laser equipments! Please always wear laser safety glasses or use any appropriate safety equipment to prevent any harmful accident.
+When a PDM object is deleted, the library may try to switch off the laser source for safety. However, you shall not rely on this behavior and always beware of dangers when using laser equipments! Please always wear laser safety goggles or use any appropriate safety equipment to prevent any harmful accident.
 
 ## Usage example
 
