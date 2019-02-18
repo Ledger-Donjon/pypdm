@@ -30,6 +30,7 @@ import pypdm
 
 pdm = pypdm.PDM(1, 'COM0')
 # Set offset current in mA.
+pdm.current_source = pypdm.CurrentSource.NUMERIC
 pdm.offset_current = 30
 pdm.activation = True
 # Apply new settings to the device.

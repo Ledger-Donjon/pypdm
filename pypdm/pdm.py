@@ -449,11 +449,20 @@ class PDM:
     @property
     def current_source(self):
         """
-        Current source, :class:`CurrentSource` instance.
-        Read-only.
+        Current source. Set to `CurrentSource.NUMERIC` to control the current
+        from software.
+
+        :type: CurrentSource
         """
         val = self.__read_instruction(Instruction.CURRENT_SOURCE, 1)[0]
         return CurrentSource(val)
+
+    @current_source.setter
+    def current_source(self, value):
+        if not isinstance(value, CurrentSource):
+            raise ValueError('Param is not a CurrentSource')
+        self.__write_instruction(Instruction.CURRENT_SOURCE,
+            value.value.to_bytes(1, 'big'))
 
     @property
     def interlock_status(self):
