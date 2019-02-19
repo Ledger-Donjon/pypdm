@@ -94,6 +94,7 @@ The following example turns on a laser source for pulsed operation. Pulse power 
 
     pdm = pypdm.PDM(1, 'COM0')
     pdm.offset_current = 0
+    pdm.current_source = pypdm.CurrentSource.NUMERIC
     pdm.current_percentage = 20
     pdm.activation = True
     # Apply new settings to the device

@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 #
-# Copyright 2018 Olivier Hériveaux, Ledger SAS
+# Copyright 2018-2019 Olivier Hériveaux, Ledger SAS
 #
 # Thanks for ALPhANOV for providing documentation to write this library.
 
