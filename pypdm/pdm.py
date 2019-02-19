@@ -449,10 +449,11 @@ class PDM:
     @property
     def current_source(self):
         """
-        Current source. Set to `CurrentSource.NUMERIC` to control the current
-        from software.
+        Current source. Set to :attr:`CurrentSource.NUMERIC` to control the
+        laser diode pulse current from software through the :attr:`current` or
+        :attr:`current_percentage` attributes.
 
-        :type: CurrentSource
+        :type: :class:`CurrentSource`
         """
         val = self.__read_instruction(Instruction.CURRENT_SOURCE, 1)[0]
         return CurrentSource(val)

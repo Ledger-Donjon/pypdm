@@ -30,8 +30,21 @@ import pypdm
 
 pdm = pypdm.PDM(1, 'COM0')
 # Set offset current in mA.
-pdm.current_source = pypdm.CurrentSource.NUMERIC
 pdm.offset_current = 30
+pdm.activation = True
+# Apply new settings to the device.
+pdm.apply()
+```
+
+### Basic laser configuration for pulsed operation
+
+```python
+import pypdm
+
+pdm = pypdm.PDM(1, 'COM0')
+# Set pulse power to 50%
+pdm.current_source = pypdm.CurrentSource.NUMERIC
+pdm.current_percentage = 50
 pdm.activation = True
 # Apply new settings to the device.
 pdm.apply()
