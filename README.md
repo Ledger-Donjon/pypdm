@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/pypdm/badge/?version=latest)](https://pypdm.readthedocs.io/en/latest/?badge=latest)
+
 # PyPDM
 
 Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is 3.4. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
