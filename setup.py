@@ -21,8 +21,16 @@
 
 from setuptools import setup, find_packages
 
+with open("README.md", "r") as f:
+    long_description = f.read()
+
 setup(
     name='pypdm',
     version='1.1',
+    author='Olivier Heriveaux',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    url='https://github.com/Ledger-Donjon/pypdm',
     install_requires=['pyserial'],
-    packages=find_packages())
+    packages=find_packages(),
+    python_requires=">=3.4")
