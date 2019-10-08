@@ -6,7 +6,7 @@ Python3 library for controlling Alphanov's PDM laser sources. Currently supporte
 
 ## Installation
 
-Clone the repository then use pip3 to install the package.
+The library can be install using pip3:
 
     pip3 install pypdm
 
