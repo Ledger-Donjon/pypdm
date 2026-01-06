@@ -22,6 +22,7 @@
 from enum import Enum
 import struct
 import serial
+from serial.serialutil import SerialException
 from typing import Union, Optional
 
 
@@ -178,7 +179,7 @@ class Link:
         """
         try:
             self.serial = serial.Serial(dev, 125000)
-        except serial.serialutil.SerialException as e:
+        except SerialException as e:
             raise ConnectionFailure() from e
 
     def __checksum(self, data: bytes) -> int:
@@ -469,34 +470,38 @@ class PDM:
         return struct.unpack(">f", val)[0]
 
     @property
-    def maximum_current(self):
+    def maximum_current(self) -> float:
         """
         Maximum Pulse Current, in mA.
         The getter of this property queries the PDM device once then cache the
         value for next accesses.
         """
-        if self.__maximum_current_cache is None:
-            val = self.__read_instruction(Instruction.MAXIMUM_PULSE_CURRENT, 4)
-            max_current = struct.unpack(">f", val)[0]
-            if max_current < 0:
-                raise ProtocolError()
-            self.__maximum_current_cache = max_current
-        return self.__maximum_current_cache
+        if self.__maximum_current_cache is not None:
+            return self.__maximum_current_cache
+
+        val = self.__read_instruction(Instruction.MAXIMUM_PULSE_CURRENT, 4)
+        max_current = struct.unpack(">f", val)[0]
+        if max_current < 0:
+            raise ProtocolError()
+        self.__maximum_current_cache = max_current
+        return max_current
 
     @property
-    def maximum_mean_current(self):
+    def maximum_mean_current(self) -> float:
         """
         Maximum Mean Current, in mA.
         The getter of this property queries the PDM device once then cache the
         value for next accesses.
         """
-        if self.__maximum_mean_current_cache is None:
-            val = self.__read_instruction(Instruction.MAXIMUM_MEAN_CURRENT, 4)
-            max_current = struct.unpack(">f", val)[0]
-            if max_current < 0:
-                raise ProtocolError()
-            self.__maximum_mean_current_cache = max_current
-        return self.__maximum_mean_current_cache
+        if self.__maximum_mean_current_cache is not None:
+            return self.__maximum_mean_current_cache
+
+        val = self.__read_instruction(Instruction.MAXIMUM_MEAN_CURRENT, 4)
+        max_current = struct.unpack(">f", val)[0]
+        if max_current < 0:
+            raise ProtocolError()
+        self.__maximum_mean_current_cache = max_current
+        return max_current
 
     @property
     def current_source(self):
