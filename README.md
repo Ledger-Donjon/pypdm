@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pypdm/badge/?version=latest)](https://pypdm.readthedocs.io/en/latest/?badge=latest)
 
-> Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is 3.4. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
+> Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is from 3.4 to 3.7. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
 
 ## Installation
 
@@ -84,3 +84,27 @@ import pypdm
 pdm1 = pypdm.PDM(1, 'COM0')
 pdm2 = pypdm.PDM(2, pdm1)
 ```
+
+## Testing
+
+To test the package with a real device, you can use `pytest` and enable the "real" tests using the `real` marker.  
+Make sure your device is connected (for example, `/dev/ttyUSB0` on Linux or `COM3` on Windows) and that you have installed the required test dependencies (`pytest`).
+
+To run all standard tests (not requiring hardware), use:
+
+```bash
+pytest
+```
+
+To run tests involving a real device, use:
+
+```bash
+pytest -m real --device /dev/ttyUSB0
+```
+
+Replace `/dev/ttyUSB0` with the appropriate serial port for your platform.
+
+The `--device` parameter specifies the serial port of the device to be used during "real" tests.  
+Tests marked with `@pytest.mark.real` will actually access the physical device.
+
+
