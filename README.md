@@ -6,7 +6,7 @@
 
 ## Installation
 
-The library can be install using pip3:
+The library can be installed using pip3:
 
 ```sh
 pip3 install pypdm
@@ -106,5 +106,3 @@ Replace `/dev/ttyUSB0` with the appropriate serial port for your platform.
 
 The `--device` parameter specifies the serial port of the device to be used during "real" tests.  
 Tests marked with `@pytest.mark.real` will actually access the physical device.
-
-

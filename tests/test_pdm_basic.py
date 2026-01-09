@@ -6,7 +6,10 @@ from conftest import FakeSerial
 from typing import Callable, cast
 import types
 
-def version_resp(v_major: int, v_minor: int, make_response: Callable[[int, bytes], bytes]) -> bytes:
+
+def version_resp(
+    v_major: int, v_minor: int, make_response: Callable[[int, bytes], bytes]
+) -> bytes:
     # DATA: U08_X, U08_Y
     return make_response(Status.OK.value, bytes([v_major, v_minor]))
 
@@ -19,20 +22,23 @@ def test_read_protocol_version(fake_serial_factory: types.SimpleNamespace) -> No
     pdm = PDM(1, link)
     # 2) explicit read -> provide a second response
     fs.queue_response(version_resp(3, 4, fake_serial_factory.make_response))
-    assert pdm.read_protocol_version() == "3.4" or pdm.read_protocol_version() == "3.7"
+    version = pdm.read_protocol_version()
+    assert version in ("3.4", "3.7")
     # 3) __del__ will disable the laser -> provide a two last OK responses
     fs.queue_response(fake_serial_factory.OK_RESP)
     fs.queue_response(fake_serial_factory.OK_RESP)
 
 
-def test_read_address_uses_address_zero(fake_serial_factory: types.SimpleNamespace) -> None:
+def test_read_address_uses_address_zero(
+    fake_serial_factory: types.SimpleNamespace,
+) -> None:
     link = Link("/dev/ttyFAKE")
     fs = cast(FakeSerial, link.serial)
     # __init__ version handshake
     fs.queue_response(version_resp(3, 4, fake_serial_factory.make_response))
     pdm = PDM(7, link)
     # Response for READ_ADDRESS: DATA0=U08_ADD
-    fs.queue_response(fake_serial_factory.make_response(Status.OK.value, bytes([5]))) # type: ignore
+    fs.queue_response(fake_serial_factory.make_response(Status.OK.value, bytes([5])))  # type: ignore
     addr = pdm.read_address()
     assert addr == 5
     # Verify that the sent frame used ADD=0
@@ -61,8 +67,9 @@ def test_mode_from_read_cw_pulse(fake_serial_factory: types.SimpleNamespace) -> 
     fs.queue_response(fake_serial_factory.OK_RESP)
 
 
-
-def test_offset_current_read_and_write(fake_serial_factory: types.SimpleNamespace) -> None:
+def test_offset_current_read_and_write(
+    fake_serial_factory: types.SimpleNamespace,
+) -> None:
     link = Link("/dev/ttyFAKE")
     fs = cast(FakeSerial, link.serial)
     # __init__ handshake
@@ -85,6 +92,3 @@ def test_offset_current_read_and_write(fake_serial_factory: types.SimpleNamespac
     # __del__ will disable the laser -> provide a two last OK responses
     fs.queue_response(fake_serial_factory.OK_RESP)
     fs.queue_response(fake_serial_factory.OK_RESP)
-
-
-

@@ -85,11 +85,13 @@ class Status(Enum):
     BAD_LENGTH = 0x08
     CHECKSUM_ERROR = 0x10
 
+
 class InterlockStatus(Enum):
     """Possible interlock status. 0: closed (laser can pulse), 1: open (laser cannot pulse)."""
 
-    CLOSED = 0 # Laser can pulse
-    OPEN = 1 # Laser cannot pulse
+    CLOSED = 0  # Laser can pulse
+    OPEN = 1  # Laser cannot pulse
+
 
 class Command(Enum):
     """Possible command IDs."""
@@ -124,6 +126,7 @@ class Instruction(Enum):
 
     SOFTWARE_CONTROL_MODE = 31
     CONTROL_MODE_SELECTION = 32
+
 
 class SyncSource(Enum):
     """Possible PDM synchronization source."""
@@ -255,7 +258,7 @@ class PDM:
     # Maximum pulse width, in ps, according to documentation.
     MAX_PULSE_WIDTH = 1275000
 
-    def __init__(self, address: int, link: Union[str, Link, 'PDM']):
+    def __init__(self, address: int, link: Union[str, Link, "PDM"]):
         """
         :param address: PDM device address.
         :param link: Specify a string for the serial to be used
@@ -276,7 +279,7 @@ class PDM:
         self.__version_cache = None
         if self.version not in ["3.4", "3.7"]:
             raise ProtocolVersionNotSupported(self.version)
-        # If the maximum current or maximum mean current is queried, 
+        # If the maximum current or maximum mean current is queried,
         # cache the result in the following float variable.
         self.__maximum_current_cache: Optional[float] = None
         self.__maximum_mean_current_cache: Optional[float] = None
@@ -288,7 +291,9 @@ class PDM:
         self.activation = False
         self.apply()
 
-    def __command(self, command: Command, data: bytes = bytes(), address: Optional[int] = None):
+    def __command(
+        self, command: Command, data: bytes = bytes(), address: Optional[int] = None
+    ):
         """
         Call link.command method with current device address.
         :param command: An instance of Command enumeration.
@@ -296,7 +301,9 @@ class PDM:
         :param address: Device address override.
         :return: Received data, without header and checksum.
         """
-        return self.link.command(self.address if address is None else address, command, data)
+        return self.link.command(
+            self.address if address is None else address, command, data
+        )
 
     def read_protocol_version(self) -> str:
         """
@@ -550,10 +557,12 @@ class PDM:
     @property
     def mode(self) -> Mode:
         """PDM mode, :class:`Mode` instance.
-         This command reads the state of the PDM's continuous or pulsed hardware switch. 
-         It returns 0 for pulsed state and 1 for continuous state. 
-         The hardware control mode is applied if the control mode selection is set
-         to hardware (see :attr:`control_mode` property).
+        This command reads the state of the PDM's continuous or pulsed hardware switch.
+        It returns 0 for pulsed state and 1 for continuous state.
+        The hardware control mode is applied if the control mode selection is set
+        to hardware (see :attr:`control_mode` property).
+        The software control mode is applied if the control mode selection is set
+        to software (see :attr:`software_control_mode` property).
         """
         res = self.__command(Command.READ_CW_PULSE)
         if len(res) != 2:
@@ -570,16 +579,19 @@ class PDM:
     def apply(self):
         """
         Apply all the instructions which are in volatile memory. This makes all
-        settings changes effectives.
+        settings changes effective.
         """
         self.__command(Command.APPLY_ALL_INSTRUCTIONS)
-
 
     @property
     def software_control_mode(self) -> Mode:
         """
         PDM mode for software control, :class:`Mode` instance.
         """
+        # Supported for protocol version 3.7
+        if self.version != "3.7":
+            raise ProtocolVersionNotSupported(self.version)
+
         val = self.__read_instruction(Instruction.SOFTWARE_CONTROL_MODE, 1)[0]
         return Mode(val)
 
@@ -590,7 +602,7 @@ class PDM:
         :param mode: The PDM control mode to set.
         """
         # Supported for protocol version 3.7
-        if self.version not in ["3.7"]:
+        if self.version != "3.7":
             raise ProtocolVersionNotSupported(self.version)
 
         self.__write_instruction(
@@ -601,16 +613,16 @@ class PDM:
     def control_mode_selection(self) -> ControlMode:
         """
         Control mode selection, :class:`ControlMode` instance.
-        This command reads the control mode selection. 
-        The software control mode is applied if the control mode selection 
+        This command reads the control mode selection.
+        The software control mode is applied if the control mode selection
         is set to software (see :attr:`software_control_mode` property).
         The hardware control mode is applied if the control mode selection is set
         to hardware. You can check the actual hardware control mode using the :attr:`mode` property.
         """
-
         # Supported for protocol version 3.7
-        if self.version not in ["3.7"]:
+        if self.version != "3.7":
             raise ProtocolVersionNotSupported(self.version)
+
         val = self.__read_instruction(Instruction.CONTROL_MODE_SELECTION, 1)[0]
         return ControlMode(val)
 
@@ -622,7 +634,7 @@ class PDM:
         :param selection: An instance of :class:`ControlMode` enumeration.
         """
         # Supported for protocol version 3.7
-        if self.version not in ["3.7"]:
+        if self.version != "3.7":
             raise ProtocolVersionNotSupported(self.version)
 
         self.__write_instruction(
