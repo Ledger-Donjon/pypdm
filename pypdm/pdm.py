@@ -380,6 +380,14 @@ class PDM:
         val = self.__read_instruction(Instruction.FREQUENCY, 4)
         return int.from_bytes(val, "big", signed=False)
 
+    @frequency.setter
+    def frequency(self, value: int):
+        if value not in range(1, 250000000 + 1):
+            raise ValueError("Frequency out of bounds")
+        self.__write_instruction(
+            Instruction.FREQUENCY, value.to_bytes(4, "big", signed=False)
+        )
+
     @property
     def pulse_width(self):
         """
