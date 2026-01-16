@@ -19,7 +19,7 @@ def test_software_control_mode_real(device_path: str) -> None:
     pdm = PDM(1, device_path)
 
     if pdm.version != "3.7":
-        raise pytest.skip(
+        pytest.skip(
             "Software control mode is not supported for protocol version 3.4"
         )
 
@@ -40,7 +40,7 @@ def test_control_mode_selection_real(device_path: str) -> None:
     pdm = PDM(1, device_path)
 
     if pdm.version != "3.7":
-        raise pytest.skip(
+        pytest.skip(
             "Control mode selection is not supported for protocol version 3.4"
         )
 
