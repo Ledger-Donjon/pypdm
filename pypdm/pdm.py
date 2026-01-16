@@ -162,7 +162,7 @@ class ControlMode(Enum):
 
     HARDWARE = 0  # The control mode is selected by the hardware
     SOFTWARE = (
-        1  # The control mode is selected by the software (see instructions 30 and 31)
+        1  # The control mode is selected by the software (see instructions 31/32)
     )
 
 
@@ -568,7 +568,7 @@ class PDM:
         This command reads the state of the PDM's continuous or pulsed hardware switch.
         It returns 0 for pulsed state and 1 for continuous state.
         The hardware control mode is applied if the control mode selection is set
-        to hardware (see :attr:`control_mode` property).
+        to hardware (see :attr:`control_mode_selection` property).
         The software control mode is applied if the control mode selection is set
         to software (see :attr:`software_control_mode` property).
         """
