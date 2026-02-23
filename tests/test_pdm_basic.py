@@ -23,7 +23,7 @@ def test_read_protocol_version(fake_serial_factory: types.SimpleNamespace) -> No
     # 2) explicit read -> provide a second response
     fs.queue_response(version_resp(3, 4, fake_serial_factory.make_response))
     version = pdm.read_protocol_version()
-    assert version in ("3.4", "3.7")
+    assert version == "3.4"
     # 3) __del__ will disable the laser -> provide a two last OK responses
     fs.queue_response(fake_serial_factory.OK_RESP)
     fs.queue_response(fake_serial_factory.OK_RESP)

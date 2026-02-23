@@ -126,13 +126,6 @@ def device_path(request: pytest.FixtureRequest) -> str:
     return dev
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    # Ensure marker is known even without pytest.ini
-    config.addinivalue_line(
-        "markers", "real: mark test as requiring a real serial device"
-    )
-
-
 def pytest_collection_modifyitems(
     config: pytest.Config, items: List[pytest.Item]
 ) -> None:

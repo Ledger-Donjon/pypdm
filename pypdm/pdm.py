@@ -224,7 +224,6 @@ class Link:
         :param address: Device address.
         :param command: An instance of Command enumeration.
         :param data: Data bytes.
-        :param address: Device address override.
         """
         length = 4 + len(data)
         if length > 0xFF:
@@ -257,6 +256,8 @@ class PDM:
     MAX_DELAY = 15000
     # Maximum pulse width, in ps, according to documentation.
     MAX_PULSE_WIDTH = 1275000
+    # Maximum frequency, in Hz, according to documentation.
+    MAX_FREQUENCY = 250000000
 
     def __init__(self, address: int, link: Union[str, Link, "PDM"]):
         """
@@ -277,7 +278,13 @@ class PDM:
         # Verify we can communicate with the PDM and the protocol version is
         # supported.
         self.__version_cache = None
-        if self.version not in ["3.4", "3.7"]:
+        version_parts = self.version.split(".")
+        try:
+            major = int(version_parts[0])
+            minor = int(version_parts[1])
+        except (IndexError, ValueError):
+            raise ProtocolVersionNotSupported(self.version)
+        if not (major == 3 and 4 <= minor <= 7):
             raise ProtocolVersionNotSupported(self.version)
         # If the maximum current or maximum mean current is queried,
         # cache the result in the following float variable.
@@ -376,14 +383,17 @@ class PDM:
 
     @property
     def frequency(self):
-        """Frequency, in Hz. int. Read-only."""
+        """Frequency, in Hz. int. Maximum value depends on the PDM device,
+        check its documentation for possible values."""
         val = self.__read_instruction(Instruction.FREQUENCY, 4)
         return int.from_bytes(val, "big", signed=False)
 
     @frequency.setter
     def frequency(self, value: int):
-        if value not in range(1, 250000000 + 1):
-            raise ValueError("Frequency out of bounds")
+        if value not in range(1, self.MAX_FREQUENCY + 1):
+            raise ValueError(
+                f"Frequency {value} out of bounds ({self.MAX_FREQUENCY}Hz max)"
+            )
         self.__write_instruction(
             Instruction.FREQUENCY, value.to_bytes(4, "big", signed=False)
         )
@@ -399,7 +409,9 @@ class PDM:
     @pulse_width.setter
     def pulse_width(self, value: int):
         if value not in range(self.MAX_PULSE_WIDTH + 1):
-            raise ValueError("Pulse width out of bounds")
+            raise ValueError(
+                f"Pulse width {value} out of bounds ({self.MAX_PULSE_WIDTH}ps max)"
+            )
         self.__write_instruction(
             Instruction.PULSE_WIDTH, value.to_bytes(4, "big", signed=False)
         )
@@ -413,7 +425,7 @@ class PDM:
     @delay.setter
     def delay(self, value: int):
         if value not in range(self.MAX_DELAY + 1):
-            raise ValueError("Delay out of bounds")
+            raise ValueError(f"Delay {value} out of bounds ({self.MAX_DELAY}ps max)")
         self.__write_instruction(
             Instruction.DELAY, value.to_bytes(4, "big", signed=False)
         )
@@ -430,7 +442,7 @@ class PDM:
     @offset_current.setter
     def offset_current(self, value: float):
         if (value < 0) or (value > 150):
-            raise ValueError("Invalid offset current value.")
+            raise ValueError(f"Offset current {value}mA out of bounds (150mA max)")
         val = struct.pack(">f", value)
         self.__write_instruction(Instruction.OFFSET_CURRENT, val)
 
@@ -475,7 +487,9 @@ class PDM:
         if value < 0:
             raise ValueError("Current cannot be negative.")
         if value > self.maximum_current:
-            raise ValueError("Current above maximum possible diode current.")
+            raise ValueError(
+                f"Current {value}mA above maximum possible diode current ({self.maximum_current}mA max)"
+            )
         self.current_percentage = (value / self.maximum_current) * 100
 
     @property
@@ -609,6 +623,8 @@ class PDM:
         Set the PDM control mode for software control. Supported for protocol version 3.7.
         :param mode: The PDM control mode to set.
         """
+        if not isinstance(mode, Mode):
+            raise ValueError("Param is not a Mode")
         # Supported for protocol version 3.7
         if self.version != "3.7":
             raise ProtocolVersionNotSupported(self.version)
@@ -641,6 +657,8 @@ class PDM:
 
         :param selection: An instance of :class:`ControlMode` enumeration.
         """
+        if not isinstance(selection, ControlMode):
+            raise ValueError("Param is not a ControlMode")
         # Supported for protocol version 3.7
         if self.version != "3.7":
             raise ProtocolVersionNotSupported(self.version)
