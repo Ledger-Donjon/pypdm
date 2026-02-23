@@ -30,3 +30,6 @@ Documentation = "https://pypdm.readthedocs.io"
 where = ["."]
 include = ["pypdm*"]
 
+[tool.setuptools.package-data]
+"pypdm" = ["py.typed"]
+
