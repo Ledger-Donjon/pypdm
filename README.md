@@ -4,6 +4,11 @@
 
 > Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is from 3.4 to 3.7. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
 
+## What's new in 2.0
+
+- Explicit support for protocol 3.7: `software_control_mode` and `control_mode_selection`.
+- Minimum required Python raised to 3.10.
+
 ## Installation
 
 The library can be installed using pip3:
@@ -18,8 +23,9 @@ A quick documentation is available on [Read the Docs](https://pypdm.readthedocs.
 
 ## Requirements
 
-This library requires the following packages:
+This library requires:
 
+- Python >= 3.10
 - pyserial
 
 ## Safety
@@ -72,8 +78,13 @@ print('Current (%):', pdm.current_percentage)
 print('Current (mA):', pdm.current)
 print('Temperature (C°):', pdm.temperature)
 print('Maximum current (mA):', pdm.maximum_current)
+print('Maximum mean current (mA):', pdm.maximum_mean_current)
+print('Current source:', pdm.current_source)
 print('Interlock status:', pdm.interlock_status)
-print('Laser activation:', pdm.laser_activation)
+print('Activation:', pdm.activation)
+# Protocol 3.7 only:
+print('Software control mode:', pdm.software_control_mode)      # requires protocol 3.7
+print('Control mode selection:', pdm.control_mode_selection)    # requires protocol 3.7
 ```
 
 ### Use of two sources in daisy-chain configuration
