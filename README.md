@@ -1,14 +1,21 @@
-[![Documentation Status](https://readthedocs.org/projects/pypdm/badge/?version=latest)](https://pypdm.readthedocs.io/en/latest/?badge=latest)
-
 # PyPDM
 
-Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is 3.4. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
+[![Documentation Status](https://readthedocs.org/projects/pypdm/badge/?version=latest)](https://pypdm.readthedocs.io/en/latest/?badge=latest)
+
+> Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is from 3.4 to 3.7. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
+
+## What's new in 2.0
+
+- Explicit support for protocol 3.7: `software_control_mode` and `control_mode_selection`.
+- Minimum required Python raised to 3.10.
 
 ## Installation
 
-The library can be install using pip3:
+The library can be installed using pip3:
 
-    pip3 install pypdm
+```sh
+pip3 install pypdm
+```
 
 ## Documentation
 
@@ -16,7 +23,9 @@ A quick documentation is available on [Read the Docs](https://pypdm.readthedocs.
 
 ## Requirements
 
-This library requires the following packages:
+This library requires:
+
+- Python >= 3.10
 - pyserial
 
 ## Safety
@@ -69,8 +78,13 @@ print('Current (%):', pdm.current_percentage)
 print('Current (mA):', pdm.current)
 print('Temperature (C°):', pdm.temperature)
 print('Maximum current (mA):', pdm.maximum_current)
+print('Maximum mean current (mA):', pdm.maximum_mean_current)
+print('Current source:', pdm.current_source)
 print('Interlock status:', pdm.interlock_status)
-print('Laser activation:', pdm.laser_activation)
+print('Activation:', pdm.activation)
+# Protocol 3.7 only:
+print('Software control mode:', pdm.software_control_mode)      # requires protocol 3.7
+print('Control mode selection:', pdm.control_mode_selection)    # requires protocol 3.7
 ```
 
 ### Use of two sources in daisy-chain configuration
@@ -82,3 +96,24 @@ pdm1 = pypdm.PDM(1, 'COM0')
 pdm2 = pypdm.PDM(2, pdm1)
 ```
 
+## Testing
+
+To test the package with a real device, you can use `pytest` and enable the "real" tests using the `real` marker.  
+Make sure your device is connected (for example, `/dev/ttyUSB0` on Linux or `COM3` on Windows) and that you have installed the required test dependencies (`pytest`).
+
+To run all standard tests (not requiring hardware), use:
+
+```bash
+pytest
+```
+
+To run tests involving a real device, use:
+
+```bash
+pytest -m real --device /dev/ttyUSB0
+```
+
+Replace `/dev/ttyUSB0` with the appropriate serial port for your platform.
+
+The `--device` parameter specifies the serial port of the device to be used during "real" tests.  
+Tests marked with `@pytest.mark.real` will actually access the physical device.

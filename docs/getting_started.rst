@@ -1,7 +1,13 @@
 Getting started!
 ================
 
-PyPDM is a small and simple Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is 3.4. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
+PyPDM is a small and simple Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is from 3.4 to 3.7. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
+
+Requirements
+------------
+
+- Python >= 3.10
+- pyserial
 
 
 Connecting to PDM devices
@@ -79,7 +85,8 @@ All configuration parameters of PDM devices can be modified using :class:`pypdm.
 - :attr:`pypdm.PDM.interlock_status`
 - :attr:`pypdm.PDM.activation`
 - :attr:`pypdm.PDM.mode`
-
+- :attr:`pypdm.PDM.software_control_mode`
+- :attr:`pypdm.PDM.control_mode_selection`
 
 Laser in pulsed operation
 -------------------------

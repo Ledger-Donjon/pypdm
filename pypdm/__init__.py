@@ -18,5 +18,21 @@
 
 
 from .pdm import PDM, Link, ConnectionFailure, SyncSource, DelayLineType, \
-    CurrentSource, Mode, ChecksumError, ProtocolError, \
-    ProtocolVersionNotSupported, ConnectionFailure, StatusError
+    CurrentSource, Mode, ControlMode, ChecksumError, ProtocolError, \
+    ProtocolVersionNotSupported, StatusError, InterlockStatus
+
+__all__ = [
+    "PDM",
+    "Link",
+    "ConnectionFailure",
+    "SyncSource",
+    "DelayLineType",
+    "CurrentSource",
+    "Mode",
+    "ControlMode",
+    "ChecksumError",
+    "ProtocolError",
+    "ProtocolVersionNotSupported",
+    "StatusError",
+    "InterlockStatus"
+]
