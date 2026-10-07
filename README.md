@@ -2,7 +2,13 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pypdm/badge/?version=latest)](https://pypdm.readthedocs.io/en/latest/?badge=latest)
 
-> Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is from 3.4 to 3.7. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link.
+> Python3 library for controlling Alphanov's PDM laser sources. Currently supported PDM protocol version is from 3.4 to 3.7. Daisy-chain configuration for multiple devices is supported, so it is possible to use many PDMs with only one serial link. ALPhANOV's LFIPico picosecond laser is also supported.
+
+## What's new in 2.1
+
+- Support for ALPhANOV's LFIPico laser (`LFIPico` class), based on the LFIPico Hexa Programming Manual v1.1.
+- Serial reads now time out (1 s by default, see `Link(dev, timeout=...)`) and raise `ResponseTimeout` instead of blocking forever when a device does not respond.
+- Real-device tests: PDM address is configurable with `--device-address`, LFIPico tests are enabled with `--lfipico-device`.
 
 ## What's new in 2.0
 
@@ -96,6 +102,26 @@ pdm1 = pypdm.PDM(1, 'COM0')
 pdm2 = pypdm.PDM(2, pdm1)
 ```
 
+### LFIPico
+
+The LFIPico board address is 51 by default. Its two amplifying diodes can be driven in low power mode (SMD2 current, in A) or high power mode (SMD2 at maximum, SMD1 current in %). Activating the laser resets the currents to 0, so `set_low_power` and `set_high_power` set the currents after activation. The seed diode (trigger, frequency, delay) is not documented by the manufacturer and is not supported yet.
+
+```python
+import pypdm
+
+pico = pypdm.LFIPico('COM0')
+print('Firmware version:', pico.firmware_version)
+print('Alarms:', pico.alarms)
+# Low power mode, SMD2 current in A.
+pico.set_low_power(0.05)
+# High power mode, SMD1 current in percentage of maximum.
+pico.set_high_power(20)
+# Switch off both diodes.
+pico.activation = False
+pico.full_activation = False
+pico.apply()
+```
+
 ## Testing
 
 To test the package with a real device, you can use `pytest` and enable the "real" tests using the `real` marker.  
@@ -116,4 +142,14 @@ pytest -m real --device /dev/ttyUSB0
 Replace `/dev/ttyUSB0` with the appropriate serial port for your platform.
 
 The `--device` parameter specifies the serial port of the device to be used during "real" tests.  
-Tests marked with `@pytest.mark.real` will actually access the physical device.
+Tests marked with `@pytest.mark.real` will actually access the physical device. If the PDM address is not 1, specify it with `--device-address`:
+
+```bash
+pytest tests -m real --device /dev/ttyUSB0 --device-address 2
+```
+
+LFIPico tests (marker `real_lfipico`) never activate the laser emission. They are enabled with `--lfipico-device` (or `PYPDM_LFIPICO_DEVICE`):
+
+```bash
+pytest tests --lfipico-device=/dev/ttyUSB1
+```
