@@ -20,6 +20,7 @@
 from .pdm import PDM, Link, ConnectionFailure, SyncSource, DelayLineType, \
     CurrentSource, Mode, ControlMode, ChecksumError, ProtocolError, \
     ProtocolVersionNotSupported, StatusError, InterlockStatus, ResponseTimeout
+from .lfipico import LFIPico, CardType, Alarm
 
 __all__ = [
     "PDM",
@@ -36,4 +37,7 @@ __all__ = [
     "StatusError",
     "InterlockStatus",
     "ResponseTimeout",
+    "LFIPico",
+    "CardType",
+    "Alarm",
 ]
