@@ -38,4 +38,6 @@ Python reference API
 
 .. autoclass:: ConnectionFailure
 
+.. autoclass:: ResponseTimeout
+
 .. autoclass:: StatusError
