@@ -1,7 +1,7 @@
 
 import pytest
 
-from pypdm.pdm import Link, Command, StatusError, ChecksumError, ProtocolError, Status
+from pypdm.pdm import Link, Command, StatusError, ChecksumError, ProtocolError, Status, ResponseTimeout
 import types
 from typing import cast
 from conftest import FakeSerial
@@ -58,3 +58,15 @@ def test_protocol_error_on_short_length(fake_serial_factory: types.SimpleNamespa
         link.command(1, Command.READ_PROTOCOL_VERSION, b"")
 
 
+
+
+def test_response_timeout(fake_serial_factory: types.SimpleNamespace) -> None:
+    link = Link("/dev/ttyFAKE")
+    fs = cast(FakeSerial, link.serial)
+    # No response at all
+    with pytest.raises(ResponseTimeout):
+        link.command(1, Command.READ_PROTOCOL_VERSION, b"")
+    # Truncated response
+    fs.queue_response(fake_serial_factory.make_response(Status.OK.value, bytes([3, 4]))[:3])
+    with pytest.raises(ResponseTimeout):
+        link.command(1, Command.READ_PROTOCOL_VERSION, b"")

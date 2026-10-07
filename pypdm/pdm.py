@@ -42,6 +42,12 @@ class ConnectionFailure(Exception):
     pass
 
 
+class ResponseTimeout(Exception):
+    """Thrown if the device does not respond in time."""
+
+    pass
+
+
 class ProtocolVersionNotSupported(Exception):
     """
     Thrown when a PDM protocol version is not (yet) supported by the library.
@@ -173,15 +179,17 @@ class Link:
     devices are daisy-chained.
     """
 
-    def __init__(self, dev: str):
+    def __init__(self, dev: str, timeout: float = 1.0):
         """
         Open serial device.
 
         :param dev: Serial device path. For instance '/dev/ttyUSB0' on linux,
             'COM0' on Windows, "/dev/tty.usbserial-FTA1BWEV" on macOS.
+        :param timeout: Response timeout, in seconds. The devices process a
+            query in 500ms at most.
         """
         try:
-            self.serial = serial.Serial(dev, 125000)
+            self.serial = serial.Serial(dev, 125000, timeout=timeout)
         except SerialException as e:
             raise ConnectionFailure() from e
 
@@ -203,12 +211,16 @@ class Link:
         """
         # Get length byte.
         data = self.serial.read(1)
+        if len(data) != 1:
+            raise ResponseTimeout()
         # Length byte must be at least 3 for responses (length byte, status
         # byte and checksum byte).
         if data[0] < 3:
             raise ProtocolError()
         # Fetch all the bytes of the command
         data += self.serial.read(data[0] - 1)
+        if len(data) != data[0]:
+            raise ResponseTimeout()
         # Verify the checksum
         if self.__checksum(data[:-1]) != data[-1]:
             raise ChecksumError()
@@ -295,6 +307,9 @@ class PDM:
         """
         For safety, disable laser when the object is deleted.
         """
+        # Skip if the device never responded.
+        if getattr(self, "_PDM__version_cache", None) is None:
+            return
         self.activation = False
         self.apply()
 
