@@ -9,6 +9,19 @@ Python reference API
     :undoc-members:
     :special-members: __init__, __del__
 
+.. autoclass:: LFIPico
+    :members:
+    :undoc-members:
+    :special-members: __init__, __del__
+
+.. autoclass:: CardType
+    :members:
+    :undoc-members:
+
+.. autoclass:: Alarm
+    :members:
+    :undoc-members:
+
 .. autoclass:: Link
     :members: __init__
 
@@ -37,5 +50,7 @@ Python reference API
     :undoc-members:
 
 .. autoclass:: ConnectionFailure
+
+.. autoclass:: ResponseTimeout
 
 .. autoclass:: StatusError
