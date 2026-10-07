@@ -104,6 +104,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Path to serial device for real tests (e.g., /dev/ttyUSB0 or COM3)",
     )
+    parser.addoption(
+        "--device-address",
+        action="store",
+        type=int,
+        default=None,
+        help="PDM address for real tests (default: 1)",
+    )
 
 
 def _resolve_device_path(config: pytest.Config) -> Optional[str]:
@@ -124,6 +131,17 @@ def device_path(request: pytest.FixtureRequest) -> str:
             "Real tests skipped: no device path provided (--device or PYPDM_DEVICE)."
         )
     return dev
+
+
+@pytest.fixture
+def device_address(request: pytest.FixtureRequest) -> int:
+    """
+    Returns the PDM address for real tests, 1 by default.
+    """
+    cli = request.config.getoption("--device-address")
+    if cli is not None:
+        return cli
+    return int(os.getenv("PYPDM_DEVICE_ADDRESS", "1"))
 
 
 def pytest_collection_modifyitems(
