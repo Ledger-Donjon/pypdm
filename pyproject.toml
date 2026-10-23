@@ -21,6 +21,12 @@ classifiers = [
   "Operating System :: OS Independent"
 ]
 
+[project.optional-dependencies]
+gui = ["PySide6-Essentials"]
+
+[project.scripts]
+pypdm-gui = "pypdm.gui:main"
+
 [project.urls]
 Homepage = "https://github.com/Ledger-Donjon/pypdm"
 Repository = "https://github.com/Ledger-Donjon/pypdm"

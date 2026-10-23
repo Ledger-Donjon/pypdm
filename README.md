@@ -122,6 +122,22 @@ pico.full_activation = False
 pico.apply()
 ```
 
+### Control window
+
+A small control window for PDM and LFIPico devices, inspired by ALPhANOV's LFIPico software, is provided. It requires PySide6:
+
+```sh
+pip3 install pypdm[gui]
+pypdm-gui
+```
+
+Select the device type, serial port and address, then connect. The window provides laser activation and the device settings:
+
+- PDM: synchronization source, delay line, frequency, pulse width, delay, offset current, current source and current, and control modes for protocol 3.7. Status shows interlock, mode and temperature.
+- LFIPico: low/high power mode and adjustment. Status shows alarms. Trigger, frequency and delay settings are not documented by the manufacturer and are not available.
+
+PDM settings changes are applied immediately. The laser is switched off when disconnecting or closing the window.
+
 ## Testing
 
 To test the package with a real device, you can use `pytest` and enable the "real" tests using the `real` marker.  
