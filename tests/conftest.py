@@ -104,6 +104,19 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Path to serial device for real tests (e.g., /dev/ttyUSB0 or COM3)",
     )
+    parser.addoption(
+        "--device-address",
+        action="store",
+        type=int,
+        default=None,
+        help="PDM address for real tests (default: 1)",
+    )
+    parser.addoption(
+        "--lfipico-device",
+        action="store",
+        default=None,
+        help="Path to serial device for real LFIPico tests (e.g., /dev/ttyUSB0 or COM3)",
+    )
 
 
 def _resolve_device_path(config: pytest.Config) -> Optional[str]:
@@ -111,6 +124,13 @@ def _resolve_device_path(config: pytest.Config) -> Optional[str]:
     if cli:
         return cli
     return os.getenv("PYPDM_DEVICE")
+
+
+def _resolve_lfipico_device_path(config: pytest.Config) -> Optional[str]:
+    cli = config.getoption("--lfipico-device")
+    if cli:
+        return cli
+    return os.getenv("PYPDM_LFIPICO_DEVICE")
 
 
 @pytest.fixture
@@ -122,6 +142,31 @@ def device_path(request: pytest.FixtureRequest) -> str:
     if not dev:
         pytest.skip(
             "Real tests skipped: no device path provided (--device or PYPDM_DEVICE)."
+        )
+    return dev
+
+
+@pytest.fixture
+def device_address(request: pytest.FixtureRequest) -> int:
+    """
+    Returns the PDM address for real tests, 1 by default.
+    """
+    cli = request.config.getoption("--device-address")
+    if cli is not None:
+        return cli
+    return int(os.getenv("PYPDM_DEVICE_ADDRESS", "1"))
+
+
+@pytest.fixture
+def lfipico_device_path(request: pytest.FixtureRequest) -> str:
+    """
+    Returns the real LFIPico device path, or skips if missing.
+    """
+    dev = _resolve_lfipico_device_path(request.config)
+    if not dev:
+        pytest.skip(
+            "Real LFIPico tests skipped: no device path provided "
+            "(--lfipico-device or PYPDM_LFIPICO_DEVICE)."
         )
     return dev
 

@@ -3,8 +3,8 @@ import pytest
 
 
 @pytest.mark.real
-def test_read_protocol_version_real(device_path: str) -> None:
-    pdm = PDM(1, device_path)
+def test_read_protocol_version_real(device_path: str, device_address: int) -> None:
+    pdm = PDM(device_address, device_path)
 
     version_parts = pdm.version.split(".")
     try:
@@ -17,14 +17,14 @@ def test_read_protocol_version_real(device_path: str) -> None:
 
 
 @pytest.mark.real
-def test_read_address_real(device_path: str) -> None:
-    pdm = PDM(1, device_path)
-    assert pdm.read_address() == 1
+def test_read_address_real(device_path: str, device_address: int) -> None:
+    pdm = PDM(device_address, device_path)
+    assert pdm.read_address() == device_address
 
 
 @pytest.mark.real
-def test_software_control_mode_real(device_path: str) -> None:
-    pdm = PDM(1, device_path)
+def test_software_control_mode_real(device_path: str, device_address: int) -> None:
+    pdm = PDM(device_address, device_path)
 
     if pdm.version != "3.7":
         pytest.skip("Software control mode is not supported for protocol version 3.4")
@@ -42,8 +42,8 @@ def test_software_control_mode_real(device_path: str) -> None:
 
 
 @pytest.mark.real
-def test_control_mode_selection_real(device_path: str) -> None:
-    pdm = PDM(1, device_path)
+def test_control_mode_selection_real(device_path: str, device_address: int) -> None:
+    pdm = PDM(device_address, device_path)
 
     if pdm.version != "3.7":
         pytest.skip("Control mode selection is not supported for protocol version 3.4")
