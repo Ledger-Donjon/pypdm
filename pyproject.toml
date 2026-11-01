@@ -22,8 +22,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# PySide6 6.12.0 corrupts None reference count on Python < 3.12, crashing.
-gui = ["PySide6-Essentials!=6.12.0"]
+gui = ["PyQt6"]
 
 [project.scripts]
 pypdm-gui = "pypdm.gui:main"
