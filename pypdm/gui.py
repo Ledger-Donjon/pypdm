@@ -21,14 +21,14 @@
 Small control window for ALPhANOV's PDM and LFIPico laser sources, inspired by
 ALPhANOV's LFIPico software. Only documented features are provided.
 
-Requires PySide6: ``pip install pypdm[gui]``, then run ``pypdm-gui``.
+Requires PyQt6: ``pip install pypdm[gui]``, then run ``pypdm-gui``.
 """
 
 import sys
 from typing import Callable, List, Optional
 
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import (
+from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QComboBox,
@@ -669,10 +669,10 @@ class Window(QWidget):
             self,
             self.windowTitle(),
             "Class 4 laser. Enable laser emission?",
-            QMessageBox.Yes | QMessageBox.Cancel,
-            QMessageBox.Cancel,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
         )
-        if answer != QMessageBox.Yes:
+        if answer != QMessageBox.StandardButton.Yes:
             self.set_active(False)
             return
         try:

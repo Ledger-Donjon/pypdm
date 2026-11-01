@@ -124,7 +124,7 @@ pico.apply()
 
 ### Control window
 
-A small control window for PDM and LFIPico devices, inspired by ALPhANOV's LFIPico software, is provided. It requires PySide6:
+A small control window for PDM and LFIPico devices, inspired by ALPhANOV's LFIPico software, is provided. It requires PyQt6:
 
 ```sh
 pip3 install pypdm[gui]
