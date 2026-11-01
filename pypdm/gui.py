@@ -27,7 +27,7 @@ Requires PyQt6: ``pip install pypdm[gui]``, then run ``pypdm-gui``.
 import sys
 from typing import Callable, List, Optional
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QSettings, Qt, QTimer
 from PyQt6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -56,6 +56,9 @@ from .pdm import (
     SyncSource,
 )
 
+
+# Item data role holding the serial number of a port in the port list.
+SERIAL_NUMBER_ROLE = Qt.ItemDataRole.UserRole + 1
 
 # Polling period of the device state, in ms.
 POLL_PERIOD = 1000
@@ -583,6 +586,7 @@ class Window(QWidget):
             layout.addWidget(panel.status)
         self.device_type.currentIndexChanged.connect(self.select_device)
         self.select_device()
+        self.load_selection()
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
@@ -610,6 +614,38 @@ class Window(QWidget):
             if p.serial_number:
                 label += f"  (SN {p.serial_number})"
             self.port.addItem(label, p.device)
+            self.port.setItemData(
+                self.port.count() - 1, p.serial_number, SERIAL_NUMBER_ROLE
+            )
+
+    def load_selection(self):
+        """Restore the device type, port and address selected last time."""
+        settings = QSettings("Ledger", "pypdm")
+        index = self.device_type.findText(settings.value("device_type", "", str))
+        if index >= 0:
+            self.device_type.setCurrentIndex(index)
+        # Serial number first, as device paths may change between sessions.
+        serial_number = settings.value("port_serial_number", "", str)
+        index = -1
+        if serial_number:
+            index = self.port.findData(serial_number, SERIAL_NUMBER_ROLE)
+        if index < 0:
+            index = self.port.findData(settings.value("port", "", str))
+        if index >= 0:
+            self.port.setCurrentIndex(index)
+        address = settings.value("address", None)
+        if address is not None:
+            self.address.setValue(int(address))
+
+    def save_selection(self):
+        """Save the device type, port and address for the next session."""
+        settings = QSettings("Ledger", "pypdm")
+        settings.setValue("device_type", self.device_type.currentText())
+        settings.setValue("port", self.port.currentData() or "")
+        settings.setValue(
+            "port_serial_number", self.port.currentData(SERIAL_NUMBER_ROLE) or ""
+        )
+        settings.setValue("address", self.address.value())
 
     def error(self, e: Exception):
         QMessageBox.critical(self, self.windowTitle(), f"{type(e).__name__}: {e}")
@@ -708,6 +744,7 @@ class Window(QWidget):
             self.set_active(active)
 
     def closeEvent(self, event):
+        self.save_selection()
         if self.connected:
             self.disconnect()
         super().closeEvent(event)
