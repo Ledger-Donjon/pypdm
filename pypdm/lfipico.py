@@ -21,7 +21,8 @@
 
 from enum import Enum, IntFlag
 import struct
-from typing import Optional, Tuple, Union
+import time
+from typing import Callable, List, Optional, Tuple, Union
 
 from .pdm import Command, Link, PDM, ProtocolError
 
@@ -102,13 +103,23 @@ class LFIPico:
     Like for :class:`PDM`, written settings are effective only after calling
     :meth:`apply`. Activating the laser resets the SMD1 and SMD2 currents to 0,
     so currents must be set and applied after activation.
-    :meth:`set_low_power` and :meth:`set_high_power` take care of this.
+
+    The diode currents must be raised and lowered progressively, by steps of
+    :attr:`RAMP_STEP` percent of their full scale every :attr:`RAMP_PERIOD`
+    seconds. :meth:`set_low_power`, :meth:`set_high_power` and
+    :meth:`switch_off` take care of this. They block during the ramp: for a
+    non-blocking operation, run the steps given by :meth:`low_power_steps`,
+    :meth:`high_power_steps` and :meth:`switch_off_steps` with a timer.
     """
 
     # Default board address, according to documentation.
     DEFAULT_ADDRESS = 51
     # Maximum SMD2 current, in A, according to documentation.
     MAX_SMD2_CURRENT = 4.0
+    # Diode currents ramp step, in percent of their full scale.
+    RAMP_STEP = 20.0
+    # Delay between two ramp steps, in seconds.
+    RAMP_PERIOD = 1.0
 
     def __init__(
         self, link: Union[str, Link, PDM, "LFIPico"], address: int = DEFAULT_ADDRESS
@@ -324,7 +335,7 @@ class LFIPico:
 
     @smd2_current.setter
     def smd2_current(self, value: float):
-        maximum = min(self.MAX_SMD2_CURRENT, self.smd2_peak_current_max)
+        maximum = self.smd2_current_full_scale
         if (value < 0) or (value > maximum):
             raise ValueError(f"SMD2 current {value}A out of bounds ({maximum}A max)")
         self.__write_instruction(
@@ -346,30 +357,103 @@ class LFIPico:
         val = self.__read_measure(LFIPicoMeasure.INTERLOCK_ALARMS, 4)
         return Alarm(int.from_bytes(val, "big"))
 
-    def set_low_power(self, smd2_current: float):
+    @property
+    def smd2_current_full_scale(self) -> float:
+        """SMD2 current maximum allowed value, in A."""
+        return min(self.MAX_SMD2_CURRENT, self.smd2_peak_current_max)
+
+    def __ramp(
+        self, start: float, stop: float, full_scale: float, write: Callable[[float], None]
+    ) -> List[Callable[[], None]]:
         """
-        Operate in low power mode: SMD1 is off and the output is modulated by
-        the SMD2 current. Settings are applied.
+        :return: Steps writing and applying the values from start (excluded)
+            to stop (included), by :attr:`RAMP_STEP` percent of full scale.
+        """
+        step = full_scale * self.RAMP_STEP / 100
+        values = []
+        value = start
+        # Tolerance avoids a tiny last step due to rounding errors.
+        while abs(stop - value) > step * 1.001:
+            value += step if stop > value else -step
+            values.append(value)
+        if abs(stop - start) > 1e-9:
+            values.append(stop)
+
+        def make_step(v: float) -> Callable[[], None]:
+            def step_function():
+                write(v)
+                self.apply()
+
+            return step_function
+
+        return [make_step(v) for v in values]
+
+    def __set_smd1(self, value: float):
+        self.smd1_current_percentage = value
+
+    def __set_smd2(self, value: float):
+        self.smd2_current = value
+
+    def __smd1_off_steps(self) -> List[Callable[[], None]]:
+        """Steps lowering SMD1 current to 0 then powering SMD1 off, if on."""
+        if not (self.activation and self.full_activation):
+            return []
+
+        def full_off():
+            self.full_activation = False
+            self.apply()
+
+        return self.__ramp(
+            self.smd1_current_percentage, 0, 100, self.__set_smd1
+        ) + [full_off]
+
+    def __activation_steps(self) -> Tuple[List[Callable[[], None]], float]:
+        """
+        :return: Steps activating the laser if it is off, and the SMD2 current
+            once activated.
+        """
+        if self.activation:
+            return [], self.smd2_current
+
+        def activate():
+            self.full_activation = False
+            self.activation = True
+            self.apply()
+
+        # Activation resets the currents to 0.
+        return [activate], 0.0
+
+    def low_power_steps(self, smd2_current: float) -> List[Callable[[], None]]:
+        """
+        Steps to operate in low power mode: SMD1 is off and the output is
+        modulated by the SMD2 current. The laser is activated if it is off,
+        and the currents are changed progressively. The steps must be called
+        in order, :attr:`RAMP_PERIOD` seconds apart.
 
         :param smd2_current: SMD2 current, in A.
         """
         # Validate before activating the laser.
-        maximum = min(self.MAX_SMD2_CURRENT, self.smd2_peak_current_max)
+        maximum = self.smd2_current_full_scale
         if (smd2_current < 0) or (smd2_current > maximum):
             raise ValueError(
                 f"SMD2 current {smd2_current}A out of bounds ({maximum}A max)"
             )
-        # Activation resets the currents to 0, so set them afterwards.
-        self.full_activation = False
-        self.activation = True
-        self.apply()
-        self.smd2_current = smd2_current
-        self.apply()
+        steps = self.__smd1_off_steps()
+        activation, current = self.__activation_steps()
+        return (
+            steps
+            + activation
+            + self.__ramp(current, smd2_current, maximum, self.__set_smd2)
+        )
 
-    def set_high_power(self, smd1_current_percentage: float):
+    def high_power_steps(
+        self, smd1_current_percentage: float
+    ) -> List[Callable[[], None]]:
         """
-        Operate in high power mode: SMD2 is at its maximum current and the
-        output is modulated by the SMD1 current. Settings are applied.
+        Steps to operate in high power mode: SMD2 is at its maximum current
+        and the output is modulated by the SMD1 current. The laser is
+        activated if it is off, and the currents are changed progressively.
+        The steps must be called in order, :attr:`RAMP_PERIOD` seconds apart.
 
         :param smd1_current_percentage: SMD1 current, in percentage of
             :attr:`smd1_current_max`.
@@ -379,12 +463,77 @@ class LFIPico:
             raise ValueError(
                 f"SMD1 current {smd1_current_percentage}% out of bounds (0-100%)"
             )
-        # Activation resets the currents to 0, so set them afterwards.
-        self.activation = True
-        self.apply()
-        self.smd2_current = min(self.MAX_SMD2_CURRENT, self.smd2_peak_current_max)
-        self.apply()
-        self.full_activation = True
-        self.apply()
-        self.smd1_current_percentage = smd1_current_percentage
-        self.apply()
+        maximum = self.smd2_current_full_scale
+        steps, current = self.__activation_steps()
+        steps += self.__ramp(current, maximum, maximum, self.__set_smd2)
+        if self.activation and self.full_activation:
+            current = self.smd1_current_percentage
+        else:
+            current = 0.0
+
+            def full_on():
+                self.smd1_current_percentage = 0.0
+                self.full_activation = True
+                self.apply()
+
+            steps.append(full_on)
+        return steps + self.__ramp(
+            current, smd1_current_percentage, 100, self.__set_smd1
+        )
+
+    def switch_off_steps(self) -> List[Callable[[], None]]:
+        """
+        Steps to switch the laser off, lowering the currents progressively.
+        The steps must be called in order, :attr:`RAMP_PERIOD` seconds apart.
+        """
+        if not self.activation:
+            return []
+        steps = self.__smd1_off_steps()
+        steps += self.__ramp(
+            self.smd2_current, 0, self.smd2_current_full_scale, self.__set_smd2
+        )
+
+        def deactivate():
+            self.activation = False
+            self.full_activation = False
+            self.apply()
+
+        return steps + [deactivate]
+
+    def run_steps(self, steps: List[Callable[[], None]]):
+        """
+        Call the given steps, :attr:`RAMP_PERIOD` seconds apart.
+        """
+        for i, step in enumerate(steps):
+            if i:
+                time.sleep(self.RAMP_PERIOD)
+            step()
+
+    def set_low_power(self, smd2_current: float):
+        """
+        Operate in low power mode: SMD1 is off and the output is modulated by
+        the SMD2 current. The laser is activated if it is off. Currents are
+        changed progressively, so this blocks for up to 10 seconds.
+
+        :param smd2_current: SMD2 current, in A.
+        """
+        self.run_steps(self.low_power_steps(smd2_current))
+
+    def set_high_power(self, smd1_current_percentage: float):
+        """
+        Operate in high power mode: SMD2 is at its maximum current and the
+        output is modulated by the SMD1 current. The laser is activated if it
+        is off. Currents are changed progressively, so this blocks for up to
+        10 seconds.
+
+        :param smd1_current_percentage: SMD1 current, in percentage of
+            :attr:`smd1_current_max`.
+        """
+        self.run_steps(self.high_power_steps(smd1_current_percentage))
+
+    def switch_off(self):
+        """
+        Switch the laser off. Currents are lowered progressively, so this
+        blocks for up to 10 seconds.
+        """
+        self.run_steps(self.switch_off_steps())

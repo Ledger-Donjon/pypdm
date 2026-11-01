@@ -60,6 +60,9 @@ from .pdm import (
 # Item data role holding the serial number of a port in the port list.
 SERIAL_NUMBER_ROLE = Qt.ItemDataRole.UserRole + 1
 
+# Delay between the steps of the laser switching on and off, in ms.
+RAMP_PERIOD = int(LFIPico.RAMP_PERIOD * 1000)
+
 # Polling period of the device state, in ms.
 POLL_PERIOD = 1000
 
@@ -188,7 +191,22 @@ class DevicePanel:
         raise NotImplementedError()
 
     def laser_off(self):
+        """Switch the laser off immediately."""
         raise NotImplementedError()
+
+    def laser_on_steps(self) -> List[Callable[[], None]]:
+        """
+        :return: Steps switching the laser on, to be called
+            :data:`RAMP_PERIOD` ms apart.
+        """
+        return [self.laser_on]
+
+    def laser_off_steps(self) -> List[Callable[[], None]]:
+        """
+        :return: Steps switching the laser off, to be called
+            :data:`RAMP_PERIOD` ms apart.
+        """
+        return [self.laser_off]
 
     def poll(self) -> bool:
         """
@@ -487,11 +505,17 @@ class LFIPicoPanel(DevicePanel):
     def set_active(self, active: bool):
         self.power_mode.set_enabled(not active)
 
-    def laser_on(self):
+    def laser_on_steps(self) -> List[Callable[[], None]]:
+        assert self.device is not None
+        # Currents are raised progressively.
         if self.high():
-            self.device.set_high_power(self.high_adj.value())
-        else:
-            self.device.set_low_power(self.low_adj.value())
+            return self.device.high_power_steps(self.high_adj.value())
+        return self.device.low_power_steps(self.low_adj.value())
+
+    def laser_off_steps(self) -> List[Callable[[], None]]:
+        assert self.device is not None
+        # Currents are lowered progressively.
+        return self.device.switch_off_steps()
 
     def laser_off(self):
         self.device.activation = False
@@ -539,6 +563,11 @@ class Window(QWidget):
         super().__init__()
         self.connected = False
         self.active = False
+        # Remaining steps of the laser switching on or off, called on timer.
+        self.ramp: List[Callable[[], None]] = []
+        self.ramp_done: Optional[Callable[[], None]] = None
+        self.ramp_switching_on = False
+        self.closing = False
         self.setWindowTitle("PyPDM")
         self.setStyleSheet(STYLE)
         layout = QVBoxLayout(self)
@@ -576,6 +605,9 @@ class Window(QWidget):
         self.activation.add_to(grid, 1, 0)
         grid.addWidget(QLabel("Laser Activation"), 0, 0, 1, 2)
         self.activation.on_click(self.activation_clicked)
+        self.ramp_label = QLabel("")
+        self.ramp_label.setStyleSheet("color: gray;")
+        grid.addWidget(self.ramp_label, 1, 2)
         self.control = box
         layout.addWidget(box)
 
@@ -590,6 +622,9 @@ class Window(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
+        self.ramp_timer = QTimer(self)
+        self.ramp_timer.setSingleShot(True)
+        self.ramp_timer.timeout.connect(self.ramp_step)
         self.set_connected(False)
 
     @property
@@ -680,11 +715,77 @@ class Window(QWidget):
         self.timer.start(POLL_PERIOD)
 
     def disconnect(self):
-        try:
-            self.laser_off()
-        finally:
+        """Switch the laser off progressively, then release the device."""
+        if self.ramp:
+            return
+
+        def release():
             self.panel.close()
             self.set_connected(False)
+            if self.closing:
+                self.close()
+
+        if self.active:
+            self.laser_off(release)
+        else:
+            release()
+
+    def start_ramp(
+        self,
+        steps: List[Callable[[], None]],
+        switching_on: bool,
+        done: Optional[Callable[[], None]] = None,
+    ):
+        """
+        Run the steps of the laser switching on or off, :data:`RAMP_PERIOD`
+        ms apart, then call done. Controls are disabled meanwhile.
+        """
+        self.ramp = list(steps)
+        self.ramp_done = done
+        self.ramp_switching_on = switching_on
+        self.ramp_label.setText(
+            "Switching on…" if switching_on else "Switching off…"
+        )
+        self.activation.set_enabled(False)
+        self.connect_button.setEnabled(False)
+        self.ramp_step()
+
+    def stop_ramp(self):
+        self.ramp_timer.stop()
+        self.ramp = []
+        self.ramp_done = None
+        self.ramp_label.setText("")
+        self.activation.set_enabled(True)
+        self.connect_button.setEnabled(True)
+
+    def ramp_step(self):
+        if not self.ramp or not self.connected:
+            self.stop_ramp()
+            return
+        try:
+            self.ramp.pop(0)()
+        except Exception as e:
+            self.stop_ramp()
+            self.error(e)
+            self.emergency_off()
+            return
+        if self.ramp:
+            self.ramp_timer.start(RAMP_PERIOD)
+        else:
+            done = self.ramp_done
+            self.stop_ramp()
+            if done is not None:
+                done()
+
+    def emergency_off(self):
+        """Switch the laser off immediately, after an error."""
+        self.set_active(False)
+        if self.connected:
+            try:
+                self.panel.laser_off()
+            except Exception as e:
+                self.error(e)
+        self.poll()
 
     def is_on(self) -> bool:
         return self.active
@@ -712,20 +813,33 @@ class Window(QWidget):
             self.set_active(False)
             return
         try:
-            self.panel.laser_on()
-            self.set_active(True)
+            steps = self.panel.laser_on_steps()
+        except Exception as e:
+            self.set_active(False)
+            self.error(e)
+            return
+        self.set_active(True)
+        self.start_ramp(steps, True, self.poll)
+
+    def laser_off(self, done: Optional[Callable[[], None]] = None):
+        """Switch the laser off progressively, then call done."""
+        if not self.connected:
+            self.set_active(False)
+            return
+        try:
+            steps = self.panel.laser_off_steps()
         except Exception as e:
             self.error(e)
-            self.laser_off()
-        self.poll()
+            self.emergency_off()
+            return
 
-    def laser_off(self):
-        self.set_active(False)
-        if self.connected:
-            try:
-                self.panel.laser_off()
-            except Exception as e:
-                self.error(e)
+        def finished():
+            self.set_active(False)
+            self.poll()
+            if done is not None:
+                done()
+
+        self.start_ramp(steps, False, finished)
 
     def poll(self):
         """Refresh the device status."""
@@ -739,6 +853,12 @@ class Window(QWidget):
             self.set_connected(False)
             self.error(e)
             return
+        if self.ramp:
+            if not active and self.ramp_switching_on:
+                # For instance, interlock triggered while switching on.
+                self.stop_ramp()
+                self.set_active(False)
+            return
         if active != self.is_on():
             # For instance, switched off by the interlock.
             self.set_active(active)
@@ -746,7 +866,11 @@ class Window(QWidget):
     def closeEvent(self, event):
         self.save_selection()
         if self.connected:
+            # Close once the laser is switched off progressively.
+            self.closing = True
+            event.ignore()
             self.disconnect()
+            return
         super().closeEvent(event)
 
 
