@@ -8,6 +8,7 @@
 
 - Support for ALPhANOV's LFIPico laser (`LFIPico` class), based on the LFIPico Hexa Programming Manual v1.1.
 - LFIPico diode currents are raised and lowered progressively, by steps of 20% of their full scale every second: `set_low_power`, `set_high_power` and `switch_off` block during the ramp, the `*_steps` methods allow running it with a timer.
+- Control window for PDM and LFIPico devices: install with `pip install pypdm[gui]` (PyQt6), then run `pypdm-gui`.
 - Serial reads now time out (1 s by default, see `Link(dev, timeout=...)`) and raise `ResponseTimeout` instead of blocking forever when a device does not respond.
 - Real-device tests: PDM address is configurable with `--device-address`, LFIPico tests are enabled with `--lfipico-device`.
 
